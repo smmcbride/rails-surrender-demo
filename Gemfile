@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
@@ -49,3 +50,4 @@ group :development do
 end
 
 gem "cancancan"
+gem "rubocop"

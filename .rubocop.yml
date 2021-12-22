@@ -1,0 +1,14 @@
+AllCops:
+  NewCops: enable
+  Exclude:
+    - Gemfile
+    - 'db/**/*'
+    - 'config/**/*'
+    - 'script/**/*'
+    - 'bin/{bundle,rails,rake,setup}'
+
+
+Style/Documentation:
+  Exclude:
+    - 'app/controllers/**/*'
+    - 'app/models/**/*'

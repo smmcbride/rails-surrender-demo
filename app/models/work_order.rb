@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 class WorkOrder < ApplicationRecord
-  VALID_STATUSES = %w[open pending closed]
+  VALID_STATUSES = %w[open pending closed].freeze
   belongs_to :user
   has_many :activities
 
