@@ -51,3 +51,4 @@ end
 
 gem "cancancan"
 gem "rubocop"
+gem 'rails-surrender'

@@ -13,6 +13,14 @@ class ApplicationController < ActionController::API
     render status: 403, json: { error: 'User is not authorized' }
   end
 
+  rescue_from Rails::Surrender::Error do |error|
+    render status: 400, json: { error: error.message }
+  end
+
+  rescue_from ActiveRecord::RecordNotFound do |error|
+    render status: 404, json: { error: error.message }
+  end
+
   private
 
   def current_user

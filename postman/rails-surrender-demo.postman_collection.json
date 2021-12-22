@@ -17,12 +17,27 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/company",
+					"raw": "{{base_url}}/company?include=users:[work_orders]&exclude=users:[work_orders:[activities]]",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
 						"company"
+					],
+					"query": [
+						{
+							"key": "include",
+							"value": "users",
+							"disabled": true
+						},
+						{
+							"key": "include",
+							"value": "users:[work_orders]"
+						},
+						{
+							"key": "exclude",
+							"value": "users:[work_orders:[activities]]"
+						}
 					]
 				}
 			},
@@ -40,12 +55,80 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/users",
+					"raw": "{{base_url}}/users?filter=active:false&sort=-name&include=created_at, updated_at, work_orders:[created_at,updated_at, activities:[created_at, updated_at, user_id]]",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
 						"users"
+					],
+					"query": [
+						{
+							"key": "ids",
+							"value": null,
+							"description": "applies filters and returns the ids of matching records",
+							"disabled": true
+						},
+						{
+							"key": "count",
+							"value": null,
+							"description": "applies filters and counts results",
+							"disabled": true
+						},
+						{
+							"key": "per",
+							"value": "2",
+							"description": "number of records per page",
+							"disabled": true
+						},
+						{
+							"key": "page",
+							"value": "2",
+							"description": "page number, response headers have pagination details",
+							"disabled": true
+						},
+						{
+							"key": "filter",
+							"value": "active:false"
+						},
+						{
+							"key": "sort",
+							"value": "-name",
+							"description": "add - to reverse sort"
+						},
+						{
+							"key": "sort",
+							"value": "name",
+							"disabled": true
+						},
+						{
+							"key": "include",
+							"value": "work_orders",
+							"description": "render associated assets, note work_orders renders activities by default",
+							"disabled": true
+						},
+						{
+							"key": "include",
+							"value": "work_order_ids",
+							"description": "render only the ids of associated assets",
+							"disabled": true
+						},
+						{
+							"key": "exclude",
+							"value": "work_orders:[activities]",
+							"description": "exclude default rendering of work orders' activities",
+							"disabled": true
+						},
+						{
+							"key": "exclude",
+							"value": "created_at",
+							"disabled": true
+						},
+						{
+							"key": "include",
+							"value": "created_at, updated_at, work_orders:[created_at,updated_at, activities:[created_at, updated_at, user_id]]",
+							"description": "adding attributes to multi-level associations"
+						}
 					]
 				}
 			},
@@ -63,13 +146,36 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/users/1",
+					"raw": "{{base_url}}/users/{{user_id}}?include=work_orders&filter=active:true",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
 						"users",
-						"1"
+						"{{user_id}}"
+					],
+					"query": [
+						{
+							"key": "include",
+							"value": "work_orders"
+						},
+						{
+							"key": "count",
+							"value": null,
+							"description": "count works, but has no meaning for individual resource",
+							"disabled": true
+						},
+						{
+							"key": "ids",
+							"value": null,
+							"description": "ids works, but has no meaning for individual resource",
+							"disabled": true
+						},
+						{
+							"key": "filter",
+							"value": "active:true",
+							"description": "filters don't have any meaning"
+						}
 					]
 				}
 			},
@@ -87,12 +193,23 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/work_orders",
+					"raw": "{{base_url}}/work_orders?include=created_at, updated_at&filter=created_after:'2022-01-01', updated_before:'2022-01-03'",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
 						"work_orders"
+					],
+					"query": [
+						{
+							"key": "include",
+							"value": "created_at, updated_at"
+						},
+						{
+							"key": "filter",
+							"value": "created_after:'2022-01-01', updated_before:'2022-01-03'",
+							"description": "date filters require quotation marks"
+						}
 					]
 				}
 			},
@@ -110,13 +227,13 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/work_orders/124",
+					"raw": "{{base_url}}/work_orders/2",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
 						"work_orders",
-						"124"
+						"2"
 					]
 				}
 			},

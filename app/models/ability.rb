@@ -27,22 +27,23 @@ class Ability
 
   def user_abilities
     can :read, User, ["id IN (#{user_ids_query.to_sql})"] do |user_model|
-      user_ids = user_ids_query.pluck(:id)
       user_model.id.in? user_ids
     end
   end
 
   def work_order_abilities
     can :read, WorkOrder, ["user_id IN (#{user_ids_query.to_sql})"] do |work_order|
-      user_ids = user_ids_query.pluck(:id)
       work_order.user_id.in? user_ids
     end
   end
 
   def activity_abilities
     can :read, Activity, ["user_id IN (#{user_ids_query.to_sql})"] do |activity|
-      user_ids = user_ids_query.pluck(:id)
       activity.user_id.in? user_ids
     end
+  end
+
+  def user_ids
+    @user_ids ||= user_ids_query.pluck(:id)
   end
 end

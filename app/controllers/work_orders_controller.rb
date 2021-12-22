@@ -5,12 +5,11 @@ class WorkOrdersController < ApplicationController
 
   def index
     # @work_orders loaded and authorized by cancancan
-
-    # include activities to prevent N+1 queries.
-    @work_orders = @work_orders.includes(:activities)
+    surrender @work_orders
   end
 
   def show
-    # @work_order loaded and authorized by cancancan=
+    # @work_order loaded and authorized by cancancan
+    surrender @work_order
   end
 end

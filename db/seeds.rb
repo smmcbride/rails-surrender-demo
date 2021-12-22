@@ -28,16 +28,16 @@ end
 def activity_params(work_order, user)
   {
     work_order: work_order,
-    user: user,
+    creator: user,
     action: Faker::Company.bs
   }
 end
 
 company_names.each do |company_name|
   Company.find_or_create_by(name:company_name) do |company|
-    10.times do
+    rand(10..15).times do
       User.create!(user_params(company)) do |user|
-        50.times do
+        rand(10).times do
           WorkOrder.create!(work_order_params(user))
         end
       end
