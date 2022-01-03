@@ -1,24 +1,43 @@
-# README
+# Surrender Demo
+This is a fully functional Ruby on Rails project demonstrating the usage of 
+[rails-surrender](https://github.com/smmcbride/rails-surrender).
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
 
-Things you may want to cover:
+## Installing
+This project is not _yet_ docker-ized, so requires that Ruby on Rails can be installed on your local machine. These 
+instruction assume you have [RVM](https://rvm.io/) installed and working.
 
-* Ruby version
+Checkout this project
+```shell
+git clone https://github.com/smmcbride/rails-surrender-demo.git
+cd rails-surrender-demo
+```
 
-* System dependencies
+Install the required Ruby version if required. After installing, leave and re-ender the project directory to have RVM 
+generate the wrapper files
+```shell
+rvm install "ruby-3.0.0"
+cd ..
+cd rails-surrender-demo
 
-* Configuration
 
-* Database creation
+> ruby-3.0.1 - #gemset created /Users/username/.rvm/gems/ruby-3.0.1@rails-surrender-demo
+> ruby-3.0.1 - #generating rails-surrender-demo wrappers..............
+```
 
-* Database initialization
+Install gems, create and seed DB, and start the Rails server
+```shell
+bundle install
+rails db:create
+rails db:migrate
+rails db:seed
+rails server
+```
 
-* How to run the test suite
+Import the Postman collection and environment files from the `postman` directory into Postman and begin exploring the 
+various endpoints provided in the collection. The collection provides several examples of the query parameters that 
+`rails-surrender` makes available.
 
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+### ToDo
+* Docker-ize this project
+* Add Postman examples for passing and failing requests
