@@ -3,7 +3,8 @@
 class ApplicationController < ActionController::API
   before_action :require_current_user
 
-  NotAuthenticated = Class.new(StandardError)
+  class NotAuthenticated < StandardError
+  end
 
   rescue_from NotAuthenticated do
     render status: 401, json: { error: 'User is not authenticated' }
