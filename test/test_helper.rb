@@ -11,7 +11,18 @@ module ActiveSupport
 
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
+  end
+end
 
-    # Add more helper methods to be used by all tests here...
+module ActionDispatch
+  class IntegrationTest
+    # The demo authenticates by passing the user's id in the Authorization header.
+    def get_as(user, path, params: {})
+      get path, params: params, headers: { 'Authorization' => user.id.to_s }
+    end
+
+    def json
+      response.parsed_body
+    end
   end
 end
