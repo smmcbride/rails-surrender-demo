@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Calls the demo API with HTTPie and prints the JSON response.
+#
+#   bin/http [userId=ID] [METHOD] PATH [HTTPIE OPTIONS...]
+#
+#   bin/http userId=1 GET '/users?filter=active:false&sort=-name'
+#   bin/http userId=1 '/work_orders?page=2&per=5' --print=hb    # show response headers too
+#
+# userId is sent as the Authorization header, which is how the demo authenticates. Quote the path so the
+# shell leaves ? & [ ] alone. Set API_URL to call a server other than http://localhost:3000.
+set -euo pipefail
+
+usage() {
+  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' >&2
+  exit 64
+}
+
+command -v http >/dev/null || { echo "bin/http needs HTTPie. Run 'mise install' to get it." >&2; exit 69; }
+
+headers=()
+if [[ ${1:-} == userId=* ]]; then
+  headers=("Authorization:${1#userId=}")
+  shift
+fi
+
+method=GET
+if [[ ${1:-} =~ ^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$ ]]; then
+  method=$1
+  shift
+fi
+
+[[ ${1:-} == /* ]] || usage
+path=$1
+shift
+
+# Colour on a terminal; plain indented JSON when piped. Keys keep the order surrender renders them in.
+pretty=all
+[[ -t 1 ]] || pretty=format
+format_options=json.sort_keys:false
+
+# --check-status still prints error responses, but exits non-zero for them.
+# --ignore-stdin stops HTTPie waiting for a request body when stdin is not a terminal.
+# The ${headers[@]+...} form keeps macOS's bash 3.2 from treating an empty array as unset.
+exec http --check-status --ignore-stdin --print=b --pretty="$pretty" --format-options="$format_options" \
+  "$@" "$method" "${API_URL:-http://localhost:3000}$path" ${headers[@]+"${headers[@]}"}
