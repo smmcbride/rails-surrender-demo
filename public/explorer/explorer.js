@@ -197,17 +197,19 @@ class EndpointPanel {
   }
 
   pagingControls() {
-    const { page, per } = this.endpoint.pagination;
-    const number = (name, value) => {
+    const { page, per, max_per: maxPer } = this.endpoint.pagination;
+    const number = (name, value, max) => {
       const { input, label } = toggle({ text: name });
-      const amount = el('input', { type: 'number', min: 1, value, 'aria-label': `${name} value` });
+      const limits = max ? { min: 1, max } : { min: 1 };
+      const amount = el('input', { type: 'number', ...limits, value, 'aria-label': `${name} value` });
       amount.addEventListener('input', () => {
         input.checked = true;
       });
       return { input, amount, row: el('li', { class: 'filter' }, input, label, amount) };
     };
     this.page = number('page', page);
-    this.per = number('per', per);
+    // Surrender caps per at the page size limit, so the input stops there too.
+    this.per = number('per', per, maxPer);
 
     const count = toggle({ text: 'count' });
     this.count = count.input;

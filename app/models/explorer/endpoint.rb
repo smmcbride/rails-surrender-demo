@@ -50,8 +50,10 @@ module Explorer
       model.surrender_menu.sorts
     end
 
+    # The page size limit is nil when the app removes it.
     def pagination
-      { page: Rails::Surrender::Selection::PAGE_DEFAULT, per: Rails::Surrender::Selection::PER_PAGE_DEFAULT }
+      page_size = model.surrender_menu.page_size
+      { page: Rails::Surrender::Selection::PAGE_DEFAULT, per: page_size.default, max_per: page_size.max }
     end
   end
 end
