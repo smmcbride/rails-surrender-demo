@@ -72,7 +72,7 @@ press **Send** (or ⌘/Ctrl + Enter) to see the response with its status, `X-Sor
 - **Filter** has every filter surrender generates: equality on each column, and `_before` and `_after` on timestamps,
   to the second, sent as ISO 8601 times in UTC. Each starts with a value, so ticking it is enough.
 - **Sort** offers each column, and each column of a `belongs_to` association, ascending or descending.
-- **Pages and totals** sets `page` and `per`, or asks for the `count` or `ids` instead of the records.
+- **Pages and totals** sets `page` and `per`, or asks for the `count` instead of the records.
 
 The request line shows the URL as you build it, with each parameter coloured like its section, and the matching
 `bin/http` command to copy. The options are read from each model's `surrenders` declaration, its columns and its
@@ -119,7 +119,9 @@ names, text and ids as these. Only the timestamps differ. To reseed later, use `
 at 1 again, which `db:seed:replant` doesn't.
 
 **Add attributes and associations.** `include` adds a work order's `created_at` and its `user`, on top of what
-`WorkOrder` renders by default. Each activity's `creator` is a default expand of `Activity`.
+`WorkOrder` renders by default. Each activity's `creator` is a default expand of `Activity`. A resource renders its
+`id` first, then its other attributes, then its associations, each in the order the model declares them and then the
+order the request includes them.
 
 ```sh
 bin/http userId=1 '/work_orders/3?include=created_at,user'
@@ -132,11 +134,6 @@ bin/http userId=1 '/work_orders/3?include=created_at,user'
     "description": "Facere quo inventore. Omnis voluptas cumque. Omnis sed iusto.",
     "status": "closed",
     "created_at": "2026-11-13T18:02:15.596Z",
-    "user": {
-        "id": 1,
-        "name": "Brittany Klocko",
-        "active": true
-    },
     "activities": [
         {
             "id": 6,
@@ -165,7 +162,12 @@ bin/http userId=1 '/work_orders/3?include=created_at,user'
                 "active": false
             }
         }
-    ]
+    ],
+    "user": {
+        "id": 1,
+        "name": "Brittany Klocko",
+        "active": true
+    }
 }
 ```
 
@@ -282,20 +284,24 @@ bin/http userId=1 '/work_orders?filter=status:open&count'
 }
 ```
 
-**List the matching ids.**
+**List the matching ids.** Exclude every other field a resource renders by default, and only its `id` is left.
 
 ```sh
-bin/http userId=1 '/users?filter=active:true&ids'
+bin/http userId=1 '/users?filter=active:true&exclude=name,active'
 ```
 
 ```json
-{
-    "ids": [
-        1,
-        3,
-        5
-    ]
-}
+[
+    {
+        "id": 1
+    },
+    {
+        "id": 3
+    },
+    {
+        "id": 5
+    }
+]
 ```
 
 **Ask for something unavailable.** `User` doesn't make `company` available, so the request is rejected with

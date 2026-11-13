@@ -15,8 +15,8 @@ gem "bootsnap", require: false
 # Authorization rules that surrender applies to nested resources
 gem "cancancan", "~> 3.6"
 # JSON rendering controlled by query parameters
-# Tracks the surrender-fields branch until rails-surrender 0.2.0 is released
-gem "rails-surrender", github: "smmcbride/rails-surrender", branch: "surrender-fields"
+# Tracks the selection branch (smmcbride/rails-surrender#11) until rails-surrender 0.2.0 is released
+gem "rails-surrender", github: "smmcbride/rails-surrender", branch: "selection"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

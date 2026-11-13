@@ -209,25 +209,15 @@ class EndpointPanel {
     this.page = number('page', page);
     this.per = number('per', per);
 
-    // Surrender returns a count before ids, so only one of them can apply at a time.
     const count = toggle({ text: 'count' });
-    const ids = toggle({ text: 'ids' });
-    count.input.addEventListener('change', () => {
-      if (count.input.checked) ids.input.checked = false;
-    });
-    ids.input.addEventListener('change', () => {
-      if (ids.input.checked) count.input.checked = false;
-    });
     this.count = count.input;
-    this.ids = ids.input;
 
     return el(
       'ul',
       { class: 'filters' },
       this.page.row,
       this.per.row,
-      el('li', { class: 'filter' }, count.input, count.label, el('span', { class: 'hint' }, 'how many match')),
-      el('li', { class: 'filter' }, ids.input, ids.label, el('span', { class: 'hint' }, 'just their ids'))
+      el('li', { class: 'filter' }, count.input, count.label, el('span', { class: 'hint' }, 'how many match'))
     );
   }
 
@@ -256,7 +246,6 @@ class EndpointPanel {
     if (this.page.input.checked) params.push(['page', this.page.amount.value, 'paging']);
     if (this.per.input.checked) params.push(['per', this.per.amount.value, 'paging']);
     if (this.count.checked) params.push(['count', null, 'paging']);
-    if (this.ids.checked) params.push(['ids', null, 'paging']);
     return params;
   }
 }

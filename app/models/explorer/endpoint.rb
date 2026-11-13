@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Explorer
-  # One API route and the query options it accepts. Only collections can be filtered, sorted, paginated, counted
-  # or listed as ids; every endpoint can shape its response with include and exclude.
+  # One API route and the query options it accepts. Only collections can be filtered, sorted, paginated or
+  # counted; every endpoint can shape its response with include and exclude.
   class Endpoint
     attr_reader :path, :model
 
@@ -57,7 +57,7 @@ module Explorer
     end
 
     def pagination
-      { page: Rails::Surrender::QueryParamParser::PAGE_DEFAULT, per: Rails::Surrender::QueryParamParser::PER_PAGE_DEFAULT }
+      { page: Rails::Surrender::Selection::PAGE_DEFAULT, per: Rails::Surrender::Selection::PER_PAGE_DEFAULT }
     end
   end
 end

@@ -1,7 +1,7 @@
 GIT
   remote: https://github.com/smmcbride/rails-surrender.git
-  revision: f907e903cddfdee310d5e5d63b608a02d034c4fa
-  branch: surrender-fields
+  revision: dfc5aaaafdb2a6aeff1d936212396410698d5e13
+  branch: selection
   specs:
     rails-surrender (0.2.0)
       actionpack (>= 8.0, < 9)
