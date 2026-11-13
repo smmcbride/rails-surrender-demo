@@ -1,0 +1,3 @@
+[tools]
+# HTTPie powers bin/http, for trying the API from the command line
+"pipx:httpie" = "3.2"

@@ -1,0 +1,14 @@
+ann:
+  company: alpha
+  name: Ann Archer
+  active: true
+
+bob:
+  company: alpha
+  name: Bob Baker
+  active: false
+
+olga:
+  company: omega
+  name: Olga Ortiz
+  active: true

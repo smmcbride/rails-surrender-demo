@@ -1,43 +1,269 @@
 # Surrender Demo
-This is a fully functional Ruby on Rails project demonstrating the usage of 
-[rails-surrender](https://github.com/smmcbride/rails-surrender).
 
+[![CI](https://github.com/smmcbride/rails-surrender-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/smmcbride/rails-surrender-demo/actions/workflows/ci.yml)
 
-## Installing
-This project is not _yet_ docker-ized, so requires that Ruby on Rails can be installed on your local machine. These 
-instruction assume you have [RVM](https://rvm.io/) installed and working.
+A small Rails API that shows [rails-surrender](https://github.com/smmcbride/rails-surrender) in use. API clients shape
+each response with query parameters: they pick the attributes and nested associations they want, and filter, sort,
+paginate or count the results. The controllers stay one line long.
 
-Checkout this project
-```shell
+```ruby
+class WorkOrdersController < ApplicationController
+  load_and_authorize_resource
+
+  def index
+    surrender @work_orders
+  end
+end
+```
+
+## The domain
+
+A **company** has **users**. Users raise **work orders**, and each work order records **activities**.
+
+| Model       | Rendered by default                    | Available on request                 |
+|-------------|----------------------------------------|--------------------------------------|
+| `Company`   | `id`, `name`                           | `created_at`, `updated_at`, `users`  |
+| `User`      | `id`, `name`, `active`                 | `created_at`, `updated_at`, `work_orders` |
+| `WorkOrder` | `id`, `title`, `description`, `status`, `activities` | `created_at`, `updated_at`, `user` |
+| `Activity`  | `id`, `action`, `creator`              | `user_id`, `created_at`, `updated_at` |
+
+Each model declares this with `surrenders` (see [`app/models`](app/models)).
+
+Authorization uses [CanCanCan](https://github.com/CanCanCommunity/cancancan). A user can read only their own company,
+its users, and the work orders and activities those users created. Surrender applies the same rules to nested
+resources, so an activity recorded by someone outside the company is left out of a work order's `activities`.
+
+## Requirements
+
+- Ruby 4.0 (the exact version is in [`.ruby-version`](.ruby-version))
+- SQLite 3
+- [mise](https://mise.jdx.dev), to install [HTTPie](https://httpie.io/cli) for `bin/http`. Any other HTTPie install works
+  too.
+
+## Getting started
+
+```sh
 git clone https://github.com/smmcbride/rails-surrender-demo.git
 cd rails-surrender-demo
+mise install
+bin/setup
 ```
 
-Install the required Ruby version if required. After installing, leave and re-ender the project directory to have RVM 
-generate the wrapper files
-```shell
-rvm install "ruby-3.0.0"
-cd ..
-cd rails-surrender-demo
+`mise install` installs HTTPie. `bin/setup` installs the gems, creates and seeds the database with two companies of
+generated users, work orders and activities, and starts the server on http://localhost:3000.
 
+## Using the API
 
-> ruby-3.0.1 - #gemset created /Users/username/.rvm/gems/ruby-3.0.1@rails-surrender-demo
-> ruby-3.0.1 - #generating rails-surrender-demo wrappers..............
+| Endpoint                | Returns                        |
+|-------------------------|--------------------------------|
+| `GET /company`          | The current user's company     |
+| `GET /users`            | Users in the current company   |
+| `GET /users/:id`        | One user                       |
+| `GET /work_orders`      | Work orders in the company     |
+| `GET /work_orders/:id`  | One work order                 |
+
+`bin/http` calls the running server and pretty-prints the JSON it returns:
+
+```sh
+bin/http userId=1 GET '/users?filter=active:false&sort=-name&per=2'
 ```
 
-Install gems, create and seed DB, and start the Rails server
-```shell
-bundle install
-rails db:create
-rails db:migrate
-rails db:seed
-rails server
+This acts as user 1 and lists the inactive users in their company, sorted by name in reverse, two per page:
+
+```json
+[
+    {
+        "id": 12,
+        "name": "Yuk Medhurst",
+        "active": false
+    },
+    {
+        "id": 2,
+        "name": "Ms. Sunday Hahn",
+        "active": false
+    }
+]
 ```
 
-Import the Postman collection and environment files from the `postman` directory into Postman and begin exploring the 
-various endpoints provided in the collection. The collection provides several examples of the query parameters that 
-`rails-surrender` makes available.
+- **`userId=`** chooses the user to act as. The demo has no login. It sends the id as the `Authorization` header, which
+  keeps the demo simple but is not a pattern to copy.
+- **The method** is optional and defaults to `GET`.
+- **Quote the path**, so your shell leaves `?`, `&`, `[` and `]` alone.
+- **Extra arguments** go to HTTPie. Use `--headers` to see the response headers, or `--print=hb` for headers and body.
 
-### ToDo
-* Docker-ize this project
-* Add Postman examples for passing and failing requests
+Error responses are printed too, and `bin/http` exits non-zero for them. Set `API_URL` to call a server other than
+http://localhost:3000.
+
+### Requests to try
+
+The seed data is generated by [Faker](https://github.com/faker-ruby/faker), so your names, text and ids will differ
+from these.
+
+**Add attributes and associations.** `include` adds a work order's `created_at` and its `user`, on top of what
+`WorkOrder` renders by default. Each activity's `creator` is a default expand of `Activity`.
+
+```sh
+bin/http userId=1 '/work_orders/3?include=created_at,user'
+```
+
+```json
+{
+    "id": 3,
+    "title": "Eos libero id nostrum.",
+    "description": "Facere omnis laborum. Quis expedita necessitatibus. Culpa vel facilis.",
+    "status": "pending",
+    "created_at": "2026-10-30T18:40:12.650Z",
+    "user": {
+        "id": 1,
+        "name": "Breanne Hayes",
+        "active": false
+    },
+    "activities": [
+        {
+            "id": 3,
+            "action": "synergize e-business metrics",
+            "creator": {
+                "id": 4,
+                "name": "Faustina Streich",
+                "active": false
+            }
+        }
+    ]
+}
+```
+
+**Shape nested resources.** Brackets apply `include` and `exclude` one level down. This adds the user's work orders,
+adds `created_at` to each, and drops the activities work orders render by default.
+
+```sh
+bin/http userId=1 '/users/3?include=work_orders:[created_at]&exclude=work_orders:[activities]'
+```
+
+```json
+{
+    "id": 3,
+    "name": "Jarod Stracke DC",
+    "active": false,
+    "work_orders": [
+        {
+            "id": 17,
+            "title": "Tenetur fugiat officiis ullam.",
+            "description": "In sed architecto. Est eum assumenda. Culpa excepturi dolor.",
+            "status": "pending",
+            "created_at": "2026-10-30T18:40:12.663Z"
+        },
+        {
+            "id": 18,
+            "title": "Quidem sunt laboriosam ut.",
+            "description": "Sunt qui dolor. Dolor consequatur enim. Placeat omnis minus.",
+            "status": "pending",
+            "created_at": "2026-10-30T18:40:12.663Z"
+        }
+    ]
+}
+```
+
+**Filter on columns and timestamps.** Every column can be filtered for equality. Timestamps also get `_before`,
+`_after`, `_to` and `_from` filters, whose values must be quoted. Here the path is in double quotes, so it can contain
+the single-quoted date.
+
+```sh
+bin/http userId=1 "/work_orders?filter=status:open,created_after:'2026-01-01'&per=1"
+```
+
+```json
+[
+    {
+        "id": 8,
+        "title": "Unde sint quo voluptatum.",
+        "description": "Vel qui odit. Corrupti consectetur rerum. Rerum quia sequi.",
+        "status": "open",
+        "activities": []
+    }
+]
+```
+
+**Sort and paginate.** A leading `-` sorts in reverse. The response headers echo the sort in `X-Sort` and describe the
+page in `X-Pagination`.
+
+```sh
+bin/http userId=1 '/users?sort=-name&per=2' --headers
+```
+
+```http
+HTTP/1.1 200 OK
+content-type: application/json; charset=utf-8
+x-pagination: {"total":14,"page_total":2,"page":1,"previous_page":null,"next_page":2,"last_page":7,"per_page":2,"offset":0}
+x-sort: -name
+```
+
+(The other headers are left out here.)
+
+**Count the matches.** `count` returns how many records match the filters, across every page.
+
+```sh
+bin/http userId=1 '/work_orders?filter=status:open&count'
+```
+
+```json
+{
+    "count": 18
+}
+```
+
+**List the matching ids.**
+
+```sh
+bin/http userId=1 '/users?filter=active:true&ids'
+```
+
+```json
+{
+    "ids": [
+        5,
+        7,
+        8,
+        9,
+        13,
+        14
+    ]
+}
+```
+
+**Ask for something unavailable.** `User` doesn't make `company` available, so the request is rejected with
+`400 Bad Request`:
+
+```sh
+bin/http userId=1 '/users?include=company'
+```
+
+```json
+{
+    "error": "[:company] is not a valid include parameter."
+}
+```
+
+**Reach outside the company.** User 20 works for the other company, so user 1 gets `403 Forbidden`:
+
+```sh
+bin/http userId=1 '/users/20'
+```
+
+```json
+{
+    "error": "User is not authorized"
+}
+```
+
+The [rails-surrender README](https://github.com/smmcbride/rails-surrender#features) covers every query parameter.
+
+## Tests
+
+```sh
+bin/rails test   # integration tests for each endpoint
+bin/ci           # RuboCop, bundler-audit, Brakeman, the tests, and a seed check
+```
+
+## License
+
+[GPL-3.0](LICENSE)

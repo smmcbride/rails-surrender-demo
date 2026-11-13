@@ -1,0 +1,9 @@
+roof_inspected:
+  work_order: leaky_roof
+  creator: ann
+  action: Inspected the roof
+
+roof_quoted:
+  work_order: leaky_roof
+  creator: olga
+  action: Quoted a repair
