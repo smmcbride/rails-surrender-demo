@@ -22,12 +22,17 @@ class UsersTest < ActionDispatch::IntegrationTest
     assert_equal %w[active created_at id name], json.keys.sort
   end
 
-  test 'counts and lists ids' do
-    get_as users(:ann), '/users', params: { count: '' }
-    assert_equal({ 'count' => 2 }, json)
+  test 'counts every match' do
+    get_as users(:ann), '/users', params: { count: '', per: 1 }
 
-    get_as users(:ann), '/users', params: { ids: '' }
-    assert_equal [users(:ann).id, users(:bob).id].sort, json['ids'].sort
+    assert_equal({ 'count' => 2 }, json)
+  end
+
+  test 'lists only ids by excluding the other fields' do
+    get_as users(:ann), '/users', params: { exclude: 'name,active' }
+
+    assert_equal [users(:ann).id, users(:bob).id].sort, json.pluck('id').sort
+    assert_equal [%w[id]], json.map(&:keys).uniq
   end
 
   test 'rejects includes the model does not make available' do
