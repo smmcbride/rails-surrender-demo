@@ -1,7 +1,7 @@
 GIT
   remote: https://github.com/smmcbride/rails-surrender.git
-  revision: dfc5aaaafdb2a6aeff1d936212396410698d5e13
-  branch: selection
+  revision: be186516e8767e0e84d3c89bfe260260cc19cc5f
+  branch: main
   specs:
     rails-surrender (0.2.0)
       actionpack (>= 8.0, < 9)
