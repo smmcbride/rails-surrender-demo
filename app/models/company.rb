@@ -5,7 +5,5 @@ class Company < ApplicationRecord
 
   validates :name, presence: true
 
-  surrenders attributes: %i[id name],
-             available_attributes: %i[created_at updated_at],
-             available_expands: [:users]
+  surrenders :id, :name, available: %i[created_at updated_at users]
 end

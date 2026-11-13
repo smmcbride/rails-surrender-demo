@@ -9,7 +9,5 @@ class User < ApplicationRecord
   validates :name, presence: true
   validates :active, inclusion: { in: [true, false] }
 
-  surrenders attributes: %i[id name active],
-             available_attributes: %i[created_at updated_at],
-             available_expands: [:work_orders]
+  surrenders :id, :name, :active, available: %i[created_at updated_at work_orders]
 end

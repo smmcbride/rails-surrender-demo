@@ -6,7 +6,5 @@ class Activity < ApplicationRecord
 
   validates :action, presence: true
 
-  surrenders attributes: %i[id action],
-             available_attributes: %i[user_id created_at updated_at],
-             expands: [:creator]
+  surrenders :id, :action, :creator, available: %i[user_id created_at updated_at]
 end
