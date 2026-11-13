@@ -1,27 +1,17 @@
 # frozen_string_literal: true
 
 module Explorer
-  # A filter surrender generates for a column, with the input that suits its values and a value to start from.
+  # A filter surrender offers, with the input that suits its values and a value to start from.
   class Filter
-    # Surrender's time filters, named after the column without its _at suffix: created_before, created_after.
-    TIME_SUFFIXES = %w[before after].freeze
-
     attr_reader :name, :input, :choices, :default
 
     def self.all_for(model)
-      model.columns.flat_map { |column| for_column(model, column) }
+      model.surrender_menu.filters.map { |filter| new(filter.name, **input_for(model, filter.column)) }
     end
 
-    def self.for_column(model, column)
-      input = input_for(model, column)
-      equality = new(column.name, **input)
-      return [equality] unless column.type.in?(%i[date datetime])
-
-      stem = column.name.delete_suffix('_at')
-      [equality] + TIME_SUFFIXES.map { |suffix| new("#{stem}_#{suffix}", **input) }
-    end
-
+    # A filter the model defines compares no one column, so it takes free text.
     def self.input_for(model, column)
+      return { input: 'text', default: '' } if column.nil?
       return { input: 'choice', choices: [true, false] } if column.type == :boolean
       return { input: 'date', default: Date.current.beginning_of_year.iso8601 } if column.type == :date
       return datetime_input if column.type == :datetime
@@ -42,7 +32,7 @@ module Explorer
       { input: 'datetime', default: Time.current.utc.beginning_of_year.iso8601 }
     end
 
-    private_class_method :for_column, :input_for, :inclusion_choices, :datetime_input
+    private_class_method :input_for, :inclusion_choices, :datetime_input
 
     def initialize(name, input:, choices: nil, default: choices&.first)
       @name = name

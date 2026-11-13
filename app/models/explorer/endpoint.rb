@@ -46,14 +46,8 @@ module Explorer
 
     private
 
-    # Surrender sorts on the model's columns, or on a column of an association as association.column. Only
-    # belongs_to associations are offered, because joining a has_many would repeat each record per child.
     def sorts
-      own = model.attribute_names
-      associated = model.reflect_on_all_associations(:belongs_to).flat_map do |association|
-        association.klass.attribute_names.map { |column| "#{association.name}.#{column}" }
-      end
-      own + associated
+      model.surrender_menu.sorts
     end
 
     def pagination
