@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/smmcbride/rails-surrender.git
-  revision: be186516e8767e0e84d3c89bfe260260cc19cc5f
+  revision: 5a9082fba4af5993c70e1cdf6336ebd39a2827d3
   branch: main
   specs:
     rails-surrender (0.2.0)

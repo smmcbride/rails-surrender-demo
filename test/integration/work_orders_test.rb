@@ -24,6 +24,16 @@ class WorkOrdersTest < ActionDispatch::IntegrationTest
                  JSON.parse(response.headers['X-Pagination']).slice('total', 'page', 'per_page'))
   end
 
+  test 'pages 30 at a time unless asked, and never more than 60, as config/application.rb sets' do
+    get_as users(:ann), '/work_orders'
+    default_per_page = JSON.parse(response.headers['X-Pagination'])['per_page']
+
+    get_as users(:ann), '/work_orders', params: { per: 1000 }
+    max_per_page = JSON.parse(response.headers['X-Pagination'])['per_page']
+
+    assert_equal [30, 60], [default_per_page, max_per_page]
+  end
+
   test 'rejects unknown sorts' do
     get_as users(:ann), '/work_orders', params: { sort: 'priority' }
 

@@ -72,7 +72,8 @@ press **Send** (or ⌘/Ctrl + Enter) to see the response with its status, `X-Sor
 - **Filter** has every filter surrender generates: equality on each column, and `_before` and `_after` on timestamps,
   to the second, sent as ISO 8601 times in UTC. Each starts with a value, so ticking it is enough.
 - **Sort** offers each column, and each column of a `belongs_to` association, ascending or descending.
-- **Pages and totals** sets `page` and `per`, or asks for the `count` instead of the records.
+- **Pages and totals** sets `page` and `per`, or asks for the `count` instead of the records. `per` starts at the
+  demo's default page size of 30 and stops at its limit of 60.
 
 The request line shows the URL as you build it, with each parameter coloured like its section, and the matching
 `bin/http` command to copy. The options are read from each model's `surrenders` declaration, its columns and its
@@ -271,6 +272,26 @@ x-sort: -name
 ```
 
 (The other headers are left out here.)
+
+**Ask for a bigger page than allowed.** Surrender pages 50 resources at a time and never more than 100, whatever `per`
+asks for. The demo changes both in [`config/application.rb`](config/application.rb), to 30 and 60:
+
+```ruby
+config.surrender.default_per_page = 30
+config.surrender.max_per_page = 60
+```
+
+So asking for 100 gets a page of at most 60, and `X-Pagination` reports the size used:
+
+```sh
+bin/http userId=1 '/work_orders?per=100' --headers
+```
+
+```http
+HTTP/1.1 200 OK
+content-type: application/json; charset=utf-8
+x-pagination: {"total":16,"page_total":16,"page":1,"previous_page":null,"next_page":null,"last_page":1,"per_page":60,"offset":0}
+```
 
 **Count the matches.** `count` returns how many records match the filters, across every page.
 

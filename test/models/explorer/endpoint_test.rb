@@ -9,7 +9,7 @@ module Explorer
 
       assert_includes json[:sorts], 'title'
       assert_includes json[:sorts], 'user.name'
-      assert_equal({ page: 1, per: 50 }, json[:pagination])
+      assert_equal({ page: 1, per: 30, max_per: 60 }, json[:pagination])
       assert_not_empty json[:filters]
     end
 
