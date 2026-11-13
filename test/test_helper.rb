@@ -24,5 +24,15 @@ module ActionDispatch
     def json
       response.parsed_body
     end
+
+    # The API's routes as the explorer names them: /users/:id(.:format) becomes /users/{id}. The health check and
+    # the explorer page are left out, because they are not part of the API.
+    def api_routes
+      Rails.application.routes.routes
+           .map { |route| route.path.spec.to_s.delete_suffix('(.:format)') }
+           .reject { |path| path.in?(['/', '/up']) || path.start_with?('/rails') }
+           .map { |path| path.gsub(/:(\w+)/, '{\1}') }
+           .uniq
+    end
   end
 end

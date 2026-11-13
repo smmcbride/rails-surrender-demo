@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Surrender explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/explorer/explorer.css">
+  <script src="/explorer/explorer.js" defer></script>
+</head>
+<body>
+  <%= tag.div id: 'explorer', data: { catalog: @catalog } do %>
+    <header class="masthead">
+      <h1>Surrender explorer</h1>
+      <label class="actor">
+        Acting as
+        <select id="user"></select>
+      </label>
+    </header>
+
+    <nav class="endpoints" id="endpoints" aria-label="Endpoint"></nav>
+
+    <div class="workspace">
+      <form class="controls" id="controls" aria-label="Query options"></form>
+
+      <section class="exchange" aria-label="Request and response">
+        <div class="request">
+          <div class="request-line">
+            <span class="method">GET</span>
+            <code class="url" id="url"></code>
+            <button type="button" class="send" id="send">Send</button>
+          </div>
+          <div class="cli">
+            <code id="cli"></code>
+            <button type="button" class="copy" id="copy">Copy</button>
+          </div>
+        </div>
+
+        <div class="response" id="response">
+          <p class="empty">Tick the options you want, then press <strong>Send</strong> (or <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd>).</p>
+        </div>
+      </section>
+    </div>
+  <% end %>
+</body>
+</html>
