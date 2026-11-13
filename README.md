@@ -62,6 +62,14 @@ generated users, work orders and activities, and starts the server on http://loc
 | `GET /work_orders`      | Work orders in the company     |
 | `GET /work_orders/:id`  | One work order                 |
 
+### In the browser
+
+Open http://localhost:3000/docs for Swagger UI. Press **Authorize** and enter a user id, such as `1`, to act as that
+user. Each query parameter has a list of examples to choose from, so you can build a request without typing it out.
+The spec is [`public/docs/openapi.yaml`](public/docs/openapi.yaml), and a test checks that it documents every route.
+
+### From the terminal
+
 `bin/http` calls the running server and pretty-prints the JSON it returns:
 
 ```sh
