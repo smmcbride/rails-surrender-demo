@@ -40,5 +40,11 @@ module RailsSurrenderDemo
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # Surrender pages 50 resources at a time and never more than 100, whatever `per` asks for. The demo sets its own
+    # numbers to show how: 30 a page unless a request sets `per`, and at most 60. Setting max_per_page to nil removes
+    # the limit.
+    config.surrender.default_per_page = 30
+    config.surrender.max_per_page = 60
   end
 end
