@@ -1,23 +1,29 @@
 # frozen_string_literal: true
 
 module Explorer
-  # Everything the explorer page offers: the endpoints to call and the users to act as.
+  # Everything the explorer page offers: the API's GET routes, and the users to act as. Each route describes what it
+  # accepts when the page asks for its menu, so the catalog only needs the paths.
   class Catalog
-    def endpoints
-      [
-        Endpoint.singular('/company', Company),
-        Endpoint.collection('/users', User),
-        Endpoint.member('/users/{id}', User),
-        Endpoint.collection('/work_orders', WorkOrder),
-        Endpoint.member('/work_orders/{id}', WorkOrder)
-      ]
+    def as_json(*)
+      { endpoints: endpoints, users: users }
     end
 
-    def as_json(*)
-      { endpoints: endpoints.map(&:as_json), users: users }
+    # As the explorer names them: /users/:id(.:format) becomes /users/{id}.
+    def endpoints
+      Rails.application.routes.routes
+           .select { |route| route.verb == 'GET' }
+           .map { |route| route.path.spec.to_s.delete_suffix('(.:format)') }
+           .select { |path| api?(path) }
+           .map { |path| path.gsub(/:(\w+)/, '{\1}') }
+           .uniq
     end
 
     private
+
+    # The health check, Rails' own routes and the explorer page itself are not part of the API.
+    def api?(path)
+      !path.in?(['/', '/up']) && !path.start_with?('/rails')
+    end
 
     def users
       User.includes(:company).order(:id).map do |user|

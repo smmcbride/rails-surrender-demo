@@ -67,17 +67,23 @@ five users each, with their work orders and activities, and starts the server on
 Open http://localhost:3000 for the explorer. Pick an endpoint and the user to act as, tick the options you want, and
 press **Send** (or ⌘/Ctrl + Enter) to see the response with its status, `X-Sort` and `X-Pagination` headers.
 
-- **Fields** lists every attribute and association the model can render. Defaults start ticked: untick one to
+- **Fields** lists every attribute and association the endpoint can render. Defaults start ticked: untick one to
   `exclude` it, tick another to `include` it. An association's own fields shape the nested resources.
 - **Filter** has every filter surrender generates: equality on each column, and `_before` and `_after` on timestamps,
-  to the second, sent as ISO 8601 times in UTC. Each starts with a value, so ticking it is enough.
+  to the second, sent as ISO 8601 times in UTC. Each starts with a value that suits its type, so ticking it is enough.
 - **Sort** offers each column, and each column of a `belongs_to` association, ascending or descending.
 - **Pages and totals** sets `page` and `per`, or asks for the `count` instead of the records. `per` starts at the
   demo's default page size of 30 and stops at its limit of 60.
 
 The request line shows the URL as you build it, with each parameter coloured like its section, and the matching
-`bin/http` command to copy. The options are read from each model's `surrenders` declaration, its columns and its
-validations (see [`app/models/explorer`](app/models/explorer)), so they always match what the API accepts.
+`bin/http` command to copy.
+
+The explorer lists the app's `GET` routes (see [`Explorer::Catalog`](app/models/explorer/catalog.rb)), so a new route
+shows up without touching the explorer. When you pick one, it asks the route for its
+[menu](https://github.com/smmcbride/rails-surrender#menus) with `?menu`, as the user you're acting as, and builds the
+options from it. They always match what that endpoint accepts, including what its controller includes, excludes or
+leaves unpaginated. `config.surrender.menus = true` in `config/application.rb` turns menus on. A member route asks for
+its menu with the id you enter, so an id that doesn't exist, or a user who can't see it, shows the error instead.
 
 ### From the terminal
 
