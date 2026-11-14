@@ -15,7 +15,8 @@ gem "bootsnap", require: false
 # Authorization rules that surrender applies to nested resources
 gem "cancancan", "~> 3.6"
 # JSON rendering controlled by query parameters
-gem "rails-surrender", "~> 8.0"
+# Tracks the endpoint-menus branch until rails-surrender 8.0.1 is released
+gem "rails-surrender", github: "smmcbride/rails-surrender", branch: "endpoint-menus"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
