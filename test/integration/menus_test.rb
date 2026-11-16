@@ -21,7 +21,8 @@ class MenusTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_nil json['selection']
     activities = json['fields'].find { |field| field['name'] == 'activities' }
-    assert_equal 'expand', activities['kind']
+    assert_equal 'array', activities['type']
+    assert activities.key?('fields')
   end
 
   test 'a menu is only as visible as its endpoint' do

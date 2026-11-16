@@ -28,7 +28,7 @@ const toggle = ({ type = 'checkbox', name, checked = false, text, value = '' }) 
 // Surrender reads list parameters as YAML, so values with quotes in them take the other kind of quote.
 const quote = (value) => (String(value).includes("'") ? `"${value}"` : `'${value}'`);
 
-// One field from the menu. Default fields start ticked: unticking one excludes it, and ticking a field that isn't a
+// One field from the menu. Default fields start selected: de-selecting one excludes it, and selecting a field that isn't a
 // default includes it. An expand's own fields shape the nested resources.
 class FieldNode {
   constructor(field) {
@@ -36,8 +36,9 @@ class FieldNode {
     this.children = (field.fields || []).map((child) => new FieldNode(child));
   }
 
+  // Only an expand carries a field menu of its own; its type alone can't tell it from an `_ids` list.
   get association() {
-    return this.field.kind === 'expand';
+    return 'fields' in this.field;
   }
 
   render() {
@@ -105,7 +106,7 @@ const filterInput = (type) => {
   }
 };
 
-// A filter row: a checkbox to apply it and an input for its value, prefilled so ticking is enough.
+// A filter row: a checkbox to apply it and an input for its value, prefilled so selecting it is enough.
 class FilterRow {
   constructor(name, { type }) {
     this.name = name;
@@ -121,37 +122,74 @@ class FilterRow {
   render() {
     const { input, label } = toggle({ text: this.name });
     this.box = input;
-    this.value = this.valueInput();
+    const { element, input: value } = this.valueControl();
+    this.value = value;
     this.value.setAttribute('aria-label', `${this.name} value`);
     // Editing the value is a clear sign the filter is wanted.
     this.value.addEventListener('input', () => {
       this.box.checked = true;
     });
-    return el('li', { class: 'filter' }, input, label, this.value);
+    return el('li', { class: 'filter' }, input, label, element);
   }
 
-  valueInput() {
+  // The element to show, and the input that holds the value, which differ for a time and its calendar button.
+  valueControl() {
     if (this.input === 'choice') {
-      return el('select', {}, ...this.choices.map((choice) => el('option', { value: String(choice) }, String(choice))));
+      const select = el('select', {}, ...this.choices.map((choice) => el('option', { value: String(choice) }, String(choice))));
+      return { element: select, input: select };
     }
-    if (this.input === 'datetime') {
-      // The input can't hold a time zone, so it holds the UTC time without its Z. A step of one second shows seconds.
-      return el('input', { type: 'datetime-local', step: 1, value: this.initial.replace(/Z$/, '') });
-    }
-    const type = { number: 'number', date: 'date' }[this.input] || 'text';
-    return el('input', { type, value: this.initial, placeholder: this.input === 'text' ? 'value' : '' });
+    if (this.input === 'date' || this.input === 'datetime') return this.timestampControl();
+    const type = this.input === 'number' ? 'number' : 'text';
+    const input = el('input', { type, value: this.initial, placeholder: this.input === 'text' ? 'value' : '' });
+    return { element: input, input };
+  }
+
+  // A date or time shows as surrender receives it, so the field and the URL agree. Beside it is the browser's own
+  // date input, trimmed to its calendar icon. It holds digits with no zone, which are taken as UTC, and a time gets
+  // its Z. The two stay in step, so the calendar opens on whatever the text holds.
+  timestampControl() {
+    const time = this.input === 'datetime';
+    const pattern = time ? '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z' : '\\d{4}-\\d{2}-\\d{2}';
+    const text = el('input', { type: 'text', class: 'timestamp-text', value: this.initial, spellcheck: false, pattern });
+    // A step of one second makes the picker offer seconds.
+    const picker = el('input', { type: time ? 'datetime-local' : 'date', step: 1, class: 'timestamp-picker' });
+    picker.setAttribute('aria-label', `Pick ${this.name} from a calendar`);
+    const follow = () => {
+      picker.value = text.value.replace(/Z$/, '');
+    };
+    follow();
+    text.addEventListener('input', follow);
+    picker.addEventListener('change', () => {
+      if (!picker.value) return;
+      // The picker leaves out seconds when they are zero, and surrender wants them.
+      const seconds = picker.value.length === 16 ? ':00' : '';
+      text.value = time ? `${picker.value}${seconds}Z` : picker.value;
+      text.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    return { element: el('span', { class: 'timestamp' }, text, picker), input: text };
   }
 
   entry() {
     if (!this.box.checked) return null;
-    const value = this.input === 'datetime' ? `${this.value.value}Z` : this.value.value;
-    return `${this.name}:${this.quoted ? quote(value) : value}`;
+    return `${this.name}:${this.quoted ? quote(this.value.value) : this.value.value}`;
   }
 }
 
 // An endpoint menu has both parts, either of which may be null. Anything else came from a route that doesn't
 // surrender, which answers `?menu` as it answers any request.
+// The demo authenticates by user id in the Authorization header. No user sends the request without one.
+const requestHeaders = (user) => (user ? { Accept: 'application/json', Authorization: user } : { Accept: 'application/json' });
+
 const isMenu = (data) => data !== null && typeof data === 'object' && 'fields' in data && 'selection' in data;
+
+// The options each override leaves without effect, by parameter kind. Surrender answers `menu` before reading any
+// other option, `count` included. A `count` counts every record the filter matches, so it renders no fields and has
+// no pages, and its order can't change the number. The request still sends them: the explorer only says they don't
+// apply, since a request may carry them.
+const IGNORED_BY = {
+  menu: ['count', 'shape', 'filter', 'sort', 'paging'],
+  count: ['shape', 'sort', 'paging']
+};
 
 // The controls for one endpoint, and the request they describe. They are built from the endpoint's menu, which loads
 // when the endpoint is first picked.
@@ -184,10 +222,10 @@ class EndpointPanel {
   // may refuse it as it would refuse the records.
   async load(user) {
     try {
-      const response = await fetch(`${this.path()}?menu`, { headers: { Accept: 'application/json', Authorization: user } });
+      const response = await fetch(`${this.path()}?menu`, { headers: requestHeaders(user) });
       const data = await response.json().catch(() => undefined);
       if (!response.ok) {
-        this.explain(`This endpoint refused its menu with ${response.status} ${response.statusText}. Try another user${this.member ? ' or id' : ''}.`, 'failure');
+        this.explain(`This endpoint refused its menu with ${response.status} ${response.statusText}. Pick another user under Auth${this.member ? ', or another id' : ''}.`, 'failure');
       } else if (!isMenu(data)) {
         this.explain("This route doesn't surrender, so it takes no query options.");
       } else if (data.fields === null) {
@@ -210,10 +248,11 @@ class EndpointPanel {
     this.menu = menu;
     this.fields = menu.fields.map((field) => new FieldNode(field));
     const sections = [
+      this.overridesSection(menu.selection),
       this.section(
         'shape',
         'Fields',
-        'Untick a default to exclude it. Tick anything else to include it.',
+        'De-select a default to exclude it. Select anything else to include it.',
         el('ul', { class: 'fields' }, ...this.fields.map((field) => field.render()))
       )
     ];
@@ -229,17 +268,68 @@ class EndpointPanel {
           el('ul', { class: 'filters' }, ...this.filters.map((filter) => filter.render()))
         ),
         this.section('sort', 'Sort', null, this.sortControls(selection.sorts)),
-        this.section('paging', 'Pages and totals', 'Unticked options use the server default.', this.pagingControls(selection.page))
       );
+      if (selection.page) {
+        sections.push(this.section('paging', 'Pagination', 'Options left de-selected use the server default.', this.pagingControls(selection.page)));
+      }
     }
     this.body.replaceChildren(...sections);
+  }
+
+  // An override answers with something other than the records. `count` needs a collection.
+  overridesSection(selection) {
+    const options = [
+      { name: 'menu', hint: 'a menu of available options for crafting the response' },
+      selection ? { name: 'count', hint: 'a count of records that match the chosen filters' } : null
+    ].filter(Boolean);
+    this.overrides = options.map(({ name, hint }) => {
+      const { input, label } = toggle({ text: name });
+      input.addEventListener('change', () => this.markIgnored());
+      return { name, input, row: el('li', { 'data-kind': name }, input, label, el('span', { class: 'hint' }, hint)) };
+    });
+    return this.section(
+      'override',
+      'Overrides',
+      'Each answers with something other than the records, so some other options stop applying.',
+      el('ul', { class: 'filters' }, ...this.overrides.map(({ row }) => row))
+    );
+  }
+
+  // The first selected override that ignores options of this kind, if any. `menu` comes first, as surrender reads it
+  // first.
+  ignoredBy(kind) {
+    return this.overrides?.find(({ name, input }) => input.checked && IGNORED_BY[name].includes(kind))?.name;
+  }
+
+  // Ignored options stay editable and are still sent. They only look ignored, with a note saying which override
+  // ignores them.
+  markIgnored() {
+    for (const warning of this.body.querySelectorAll('.warning')) warning.hidden = true;
+    for (const item of this.body.querySelectorAll('[data-kind]')) {
+      // An override is only worth a warning when it's selected; a section's selections always are.
+      const deselected = item.matches('li') && !item.querySelector('input').checked;
+      const by = deselected ? undefined : this.ignoredBy(item.dataset.kind);
+      item.classList.toggle('ignored', Boolean(by));
+      if (!by) continue;
+
+      // Every warning sits under its section's title. One inside an override's row would push its checkbox aside.
+      const warning = item.closest('.section').querySelector(':scope > .warning');
+      warning.hidden = false;
+      warning.replaceChildren(...this.subject(item), ' ignored when requesting ', el('code', {}, by), '.');
+    }
+  }
+
+  // What a warning is about: a section's selections, or one override.
+  subject(item) {
+    return item.dataset.title ? [`${item.dataset.title} selections are`] : [el('code', {}, item.dataset.kind), ' is'];
   }
 
   section(kind, title, hint, ...body) {
     return el(
       'fieldset',
-      { class: `section section-${kind}` },
+      { class: `section section-${kind}`, 'data-kind': kind, 'data-title': title },
       el('legend', {}, title),
+      el('p', { class: 'warning', hidden: true }),
       hint ? el('p', { class: 'hint' }, hint) : null,
       ...body
     );
@@ -262,7 +352,6 @@ class EndpointPanel {
     );
   }
 
-  // `page` is null when the endpoint isn't paginated, which leaves only the count.
   pagingControls(page) {
     const number = (name, value, max) => {
       const { input, label } = toggle({ text: name });
@@ -273,20 +362,10 @@ class EndpointPanel {
       });
       return { input, amount, row: el('li', { class: 'filter' }, input, label, amount) };
     };
-    const rows = [];
-    this.page = null;
-    this.per = null;
-    if (page) {
-      this.page = number('page', 1);
-      // Surrender caps per at the page size limit, so the input stops there too.
-      this.per = number('per', page.default, page.max);
-      rows.push(this.page.row, this.per.row);
-    }
-
-    const count = toggle({ text: 'count' });
-    this.count = count.input;
-    rows.push(el('li', { class: 'filter' }, count.input, count.label, el('span', { class: 'hint' }, 'how many match')));
-    return el('ul', { class: 'filters' }, ...rows);
+    this.page = number('page', 1);
+    // Surrender caps per at the page size limit, so the input stops there too.
+    this.per = number('per', page.default, page.max);
+    return el('ul', { class: 'filters' }, this.page.row, this.per.row);
   }
 
   show(visible) {
@@ -297,11 +376,11 @@ class EndpointPanel {
     return this.template.replace('{id}', this.id ? this.id.value || '1' : '');
   }
 
-  // The query as [name, value] pairs in the order they read best. A null value is a bare flag, like `count`.
+  // The query as [name, value] pairs in the order they read best. A null value is a bare flag, like `count` or `menu`.
   query() {
     if (!this.menu) return [];
 
-    const params = [];
+    const params = this.overrides.filter(({ input }) => input.checked).map(({ name }) => [name, null, name]);
     const { include, exclude } = FieldNode.entriesFor(this.fields);
     if (include.length) params.push(['include', include.join(','), 'shape']);
     if (exclude.length) params.push(['exclude', exclude.join(','), 'shape']);
@@ -315,7 +394,6 @@ class EndpointPanel {
 
     if (this.page?.input.checked) params.push(['page', this.page.amount.value, 'paging']);
     if (this.per?.input.checked) params.push(['per', this.per.amount.value, 'paging']);
-    if (this.count.checked) params.push(['count', null, 'paging']);
     return params;
   }
 }
@@ -379,13 +457,16 @@ class Explorer {
     });
   }
 
+  // None comes first, but the first user starts selected, so every endpoint's options load.
   renderUsers() {
+    this.user.append(el('option', { value: '' }, 'None'));
     const byCompany = Map.groupBy(this.catalog.users, (user) => user.company);
     for (const [company, users] of byCompany) {
       this.user.append(
         el('optgroup', { label: company }, ...users.map((user) => el('option', { value: user.id }, `${user.id}  ${user.name}`)))
       );
     }
+    this.user.value = this.catalog.users[0]?.id ?? '';
   }
 
   renderEndpoints() {
@@ -435,12 +516,16 @@ class Explorer {
     params.forEach(([name, value, kind], index) => {
       this.url.append(
         el('span', { class: 'joint' }, index === 0 ? '?' : '&'),
-        el('span', { class: `param param-${kind}` }, value === null ? name : `${name}=${value}`)
+        el(
+          'span',
+          { class: `param param-${kind}${this.active.ignoredBy(kind) ? ' param-ignored' : ''}` },
+          value === null ? name : `${name}=${value}`
+        )
       );
     });
 
     const path = this.readableUrl();
-    this.cli.textContent = `bin/http userId=${this.user.value} ${quote(path)}`;
+    this.cli.textContent = `bin/http ${this.user.value ? `userId=${this.user.value} ` : ''}${quote(path)}`;
   }
 
   async copy(button) {
@@ -457,7 +542,7 @@ class Explorer {
     const started = performance.now();
     try {
       const response = await fetch(this.fetchUrl(), {
-        headers: { Accept: 'application/json', Authorization: this.user.value }
+        headers: requestHeaders(this.user.value)
       });
       const body = await response.text();
       this.showResponse(response, body, Math.round(performance.now() - started));
