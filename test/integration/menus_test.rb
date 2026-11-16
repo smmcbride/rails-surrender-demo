@@ -2,32 +2,45 @@
 
 require 'test_helper'
 
-# The explorer builds its controls from these menus, so they must say what each endpoint accepts.
+# The explorer builds its controls from the app menu, so it must say what each endpoint accepts.
 class MenusTest < ActionDispatch::IntegrationTest
-  test 'a collection lists its fields, filters, sorts and the demo page size' do
-    get_as users(:ann), '/work_orders', params: { menu: '' }
+  def endpoint(path)
+    json['endpoints'].find { |endpoint| endpoint['path'] == path }
+  end
 
-    assert_response :success
-    assert_includes json['fields'].pluck('name'), 'title'
-    assert_equal({ 'type' => 'string' }, json.dig('selection', 'filters', 'status'))
-    assert_equal({ 'type' => 'datetime' }, json.dig('selection', 'filters', 'created_after'))
-    assert_includes json.dig('selection', 'sorts'), 'title'
-    assert_equal({ 'default' => 30, 'max' => 60 }, json.dig('selection', 'page'))
+  test 'lists every API endpoint, in the order the routes draw them' do
+    get '/surrender_menu'
+
+    assert_equal ['/company', '/users', '/users/{id}', '/work_orders', '/work_orders/{id}'],
+                 json['endpoints'].pluck('path')
+  end
+
+  test 'a collection lists its fields, filters, sorts and the demo page size' do
+    get '/surrender_menu'
+
+    work_orders = endpoint('/work_orders')
+    assert_includes work_orders['fields'].pluck('name'), 'title'
+    assert_equal({ 'type' => 'string' }, work_orders.dig('selection', 'filters', 'status'))
+    assert_equal({ 'type' => 'datetime' }, work_orders.dig('selection', 'filters', 'created_after'))
+    assert_includes work_orders.dig('selection', 'sorts'), 'title'
+    assert_equal({ 'default' => 30, 'max' => 60 }, work_orders.dig('selection', 'page'))
   end
 
   test 'a single record lists its fields and no selection' do
-    get_as users(:ann), "/work_orders/#{work_orders(:leaky_roof).id}", params: { menu: '' }
+    get '/surrender_menu'
 
-    assert_response :success
-    assert_nil json['selection']
-    activities = json['fields'].find { |field| field['name'] == 'activities' }
+    work_order = endpoint('/work_orders/{id}')
+    assert_nil work_order['selection']
+    activities = work_order['fields'].find { |field| field['name'] == 'activities' }
     assert_equal 'array', activities['type']
     assert activities.key?('fields')
   end
 
-  test 'a menu is only as visible as its endpoint' do
-    get '/work_orders', params: { menu: '' }
+  # Surrender serves the menu from its own controller, so the demo's authentication doesn't apply. The menu shows the
+  # API's shape, not its records, which stay behind authentication.
+  test 'is served without a user' do
+    get '/surrender_menu'
 
-    assert_response :unauthorized
+    assert_response :success
   end
 end

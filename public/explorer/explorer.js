@@ -1,6 +1,6 @@
 // The explorer page: builds a request to the demo API from checkboxes, sends it, and shows the response.
-// The server lists the API's routes (Explorer::Catalog). Each route's options come from its own menu, which the page
-// asks for with `?menu` when the route is picked, so the controls always match what the endpoint accepts.
+// The server says where surrender serves the app menu (Explorer::Catalog). The page reads the menu once, and builds a
+// tab for each endpoint it lists, with options that always match what that endpoint accepts.
 
 'use strict';
 
@@ -175,30 +175,21 @@ class FilterRow {
   }
 }
 
-// An endpoint menu has both parts, either of which may be null. Anything else came from a route that doesn't
-// surrender, which answers `?menu` as it answers any request.
 // The demo authenticates by user id in the Authorization header. No user sends the request without one.
 const requestHeaders = (user) => (user ? { Accept: 'application/json', Authorization: user } : { Accept: 'application/json' });
 
-const isMenu = (data) => data !== null && typeof data === 'object' && 'fields' in data && 'selection' in data;
-
-// The options each override leaves without effect, by parameter kind. Surrender answers `menu` before reading any
-// other option, `count` included. A `count` counts every record the filter matches, so it renders no fields and has
-// no pages, and its order can't change the number. The request still sends them: the explorer only says they don't
-// apply, since a request may carry them.
+// The options each override leaves without effect, by parameter kind. A `count` counts every record the filter
+// matches, so it renders no fields and has no pages, and its order can't change the number. The request still sends
+// them: the explorer only says they don't apply, since a request may carry them.
 const IGNORED_BY = {
-  menu: ['count', 'shape', 'filter', 'sort', 'paging'],
   count: ['shape', 'sort', 'paging']
 };
 
-// The controls for one endpoint, and the request they describe. They are built from the endpoint's menu, which loads
-// when the endpoint is first picked.
+// The controls for one endpoint, and the request they describe, built from its entry in the app menu.
 class EndpointPanel {
-  constructor(path) {
+  constructor({ path, fields, selection }) {
     this.template = path;
-    this.menu = null;
-    // True once the page knows what the route accepts, which is worth asking again only after a failure.
-    this.loaded = false;
+    this.menu = { fields, selection };
   }
 
   get member() {
@@ -213,51 +204,24 @@ class EndpointPanel {
         this.section('record', 'Record', null, el('label', { class: 'record-id', htmlFor: this.id.id }, 'Id', this.id))
       );
     }
-    this.body = el('div', {}, el('p', { class: 'empty' }, 'Reading what this endpoint accepts…'));
+    this.body = el('div', {}, ...this.sections());
     this.element = el('div', { class: 'panel', hidden: true }, ...sections, this.body);
     return this.element;
   }
 
-  // Asks the route for its menu as the given user. Callbacks and authorization still run for a menu, so a route
-  // may refuse it as it would refuse the records.
-  async load(user) {
-    try {
-      const response = await fetch(`${this.path()}?menu`, { headers: requestHeaders(user) });
-      const data = await response.json().catch(() => undefined);
-      if (!response.ok) {
-        this.explain(`This endpoint refused its menu with ${response.status} ${response.statusText}. Pick another user under Auth${this.member ? ', or another id' : ''}.`, 'failure');
-      } else if (!isMenu(data)) {
-        this.explain("This route doesn't surrender, so it takes no query options.");
-      } else if (data.fields === null) {
-        this.explain('This endpoint renders something with no model, so it accepts no query options.');
-      } else {
-        this.build(data);
-      }
-      this.loaded = response.ok;
-    } catch (error) {
-      this.explain(`The menu request didn't reach the server: ${error.message}. Is bin/rails server running?`, 'failure');
-    }
-  }
-
-  explain(message, kind = 'empty') {
-    this.menu = null;
-    this.body.replaceChildren(el('p', { class: kind }, message));
-  }
-
-  build(menu) {
-    this.menu = menu;
-    this.fields = menu.fields.map((field) => new FieldNode(field));
+  sections() {
+    const { fields, selection } = this.menu;
+    this.fields = fields.map((field) => new FieldNode(field));
     const sections = [
-      this.overridesSection(menu.selection),
+      this.overridesSection(selection),
       this.section(
         'shape',
         'Fields',
         'De-select a default to exclude it. Select anything else to include it.',
         el('ul', { class: 'fields' }, ...this.fields.map((field) => field.render()))
       )
-    ];
+    ].filter(Boolean);
 
-    const { selection } = menu;
     if (selection) {
       this.filters = Object.entries(selection.filters).map(([name, filter]) => new FilterRow(name, filter));
       sections.push(
@@ -273,15 +237,17 @@ class EndpointPanel {
         sections.push(this.section('paging', 'Pagination', 'Options left de-selected use the server default.', this.pagingControls(selection.page)));
       }
     }
-    this.body.replaceChildren(...sections);
+    return sections;
   }
 
-  // An override answers with something other than the records. `count` needs a collection.
+  // An override answers with something other than the records. `count` needs a collection, so a single record has
+  // none.
   overridesSection(selection) {
-    const options = [
-      { name: 'menu', hint: 'a menu of available options for crafting the response' },
-      selection ? { name: 'count', hint: 'a count of records that match the chosen filters' } : null
-    ].filter(Boolean);
+    if (!selection) {
+      this.overrides = [];
+      return null;
+    }
+    const options = [{ name: 'count', hint: 'a count of records that match the chosen filters' }];
     this.overrides = options.map(({ name, hint }) => {
       const { input, label } = toggle({ text: name });
       input.addEventListener('change', () => this.markIgnored());
@@ -295,10 +261,9 @@ class EndpointPanel {
     );
   }
 
-  // The first selected override that ignores options of this kind, if any. `menu` comes first, as surrender reads it
-  // first.
+  // The first selected override that ignores options of this kind, if any.
   ignoredBy(kind) {
-    return this.overrides?.find(({ name, input }) => input.checked && IGNORED_BY[name].includes(kind))?.name;
+    return this.overrides.find(({ name, input }) => input.checked && IGNORED_BY[name].includes(kind))?.name;
   }
 
   // Ignored options stay editable and are still sent. They only look ignored, with a note saying which override
@@ -376,10 +341,8 @@ class EndpointPanel {
     return this.template.replace('{id}', this.id ? this.id.value || '1' : '');
   }
 
-  // The query as [name, value] pairs in the order they read best. A null value is a bare flag, like `count` or `menu`.
+  // The query as [name, value] pairs in the order they read best. A null value is a bare flag, like `count`.
   query() {
-    if (!this.menu) return [];
-
     const params = this.overrides.filter(({ input }) => input.checked).map(({ name }) => [name, null, name]);
     const { include, exclude } = FieldNode.entriesFor(this.fields);
     if (include.length) params.push(['include', include.join(','), 'shape']);
@@ -425,7 +388,6 @@ const jsonHtml = (value, depth = 0) => {
 class Explorer {
   constructor(root) {
     this.catalog = JSON.parse(root.dataset.catalog);
-    this.panels = this.catalog.endpoints.map((path) => new EndpointPanel(path));
     this.user = document.getElementById('user');
     this.url = document.getElementById('url');
     this.cli = document.getElementById('cli');
@@ -434,17 +396,15 @@ class Explorer {
     this.sendButton = document.getElementById('send');
   }
 
-  start() {
+  async start() {
     this.renderUsers();
+    const endpoints = await this.readMenu();
+    if (!endpoints) return;
+
+    this.panels = endpoints.map((endpoint) => new EndpointPanel(endpoint));
     this.renderEndpoints();
     this.controls.append(...this.panels.map((panel) => panel.render()));
     this.select(this.panels[0]);
-
-    // A menu the endpoint refused may load as another user, or for another record.
-    this.user.addEventListener('change', () => this.loadMenu());
-    this.controls.addEventListener('change', (event) => {
-      if (event.target === this.active.id) this.loadMenu();
-    });
 
     // Every control is inside the form or the header, so one listener keeps the URL current.
     document.addEventListener('input', () => this.preview());
@@ -457,7 +417,27 @@ class Explorer {
     });
   }
 
-  // None comes first, but the first user starts selected, so every endpoint's options load.
+  // The app menu lists every endpoint the API surrenders. Surrender serves it from its own controller, outside the
+  // demo's authentication, so it's read once, as no one.
+  async readMenu() {
+    const failed = (reason) => {
+      this.response.replaceChildren(
+        el('p', { class: 'failure' }, `The explorer couldn't read the API's menu at ${this.catalog.menu_path}: ${reason}.`)
+      );
+    };
+    try {
+      const response = await fetch(this.catalog.menu_path, { headers: { Accept: 'application/json' } });
+      if (!response.ok) return failed(`${response.status} ${response.statusText}. Is config.surrender.menus on?`);
+
+      const { endpoints } = await response.json();
+      if (!endpoints.length) return failed('it lists no endpoints');
+      return endpoints;
+    } catch (error) {
+      return failed(`${error.message}. Is bin/rails server running?`);
+    }
+  }
+
+  // None comes first, but the first user starts selected, so the first request sent is one the API accepts.
   renderUsers() {
     this.user.append(el('option', { value: '' }, 'None'));
     const byCompany = Map.groupBy(this.catalog.users, (user) => user.company);
@@ -486,15 +466,6 @@ class Explorer {
       this.tabs[index].setAttribute('aria-current', other === panel ? 'page' : 'false');
     });
     this.preview();
-    this.loadMenu();
-  }
-
-  async loadMenu() {
-    const panel = this.active;
-    if (panel.loaded) return;
-
-    await panel.load(this.user.value);
-    if (panel === this.active) this.preview();
   }
 
   // The request as people read it: brackets, colons and quotes left as typed.

@@ -14,8 +14,7 @@ class ExplorerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test 'offers every API route, read from the routes, leaving out the health check and the page itself' do
-    assert_equal ['/company', '/users', '/users/{id}', '/work_orders', '/work_orders/{id}'],
-                 Explorer::Catalog.new.endpoints.sort
+  test 'tells the page where to read the app menu' do
+    assert_equal '/surrender_menu', Explorer::Catalog.new.as_json[:menu_path]
   end
 end

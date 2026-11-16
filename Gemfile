@@ -15,7 +15,9 @@ gem "bootsnap", require: false
 # Authorization rules that surrender applies to nested resources
 gem "cancancan", "~> 3.6"
 # JSON rendering controlled by query parameters
-gem "rails-surrender", "~> 8.1"
+# 8.2.0 is unreleased, so the demo runs against the gem checked out beside it. Switch back to "~> 8.2" once it is
+# on RubyGems.
+gem "rails-surrender", path: "../rails-surrender"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

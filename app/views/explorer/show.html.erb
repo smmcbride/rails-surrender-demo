@@ -14,6 +14,9 @@
   <%= tag.div id: 'explorer', data: { catalog: @catalog } do %>
     <header class="masthead">
       <h1>Surrender Demonstration Explorer</h1>
+      <a class="menu-link" href="<%= @catalog.menu_path %>" target="_blank" rel="noopener">
+        Read from the app menu, <code><%= @catalog.menu_path %></code>
+      </a>
     </header>
 
     <nav class="endpoints" id="endpoints" aria-label="Endpoint"></nav>

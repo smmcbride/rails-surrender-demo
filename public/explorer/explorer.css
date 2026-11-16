@@ -66,6 +66,21 @@ kbd {
   font-weight: 600;
 }
 
+.menu-link {
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.menu-link:hover code {
+  text-decoration: underline;
+}
+
+.menu-link code {
+  font-family: var(--mono);
+  color: var(--shape);
+}
+
 .endpoints {
   display: flex;
   flex-wrap: wrap;

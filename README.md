@@ -68,10 +68,9 @@ Open http://localhost:3000 for the explorer, where you craft the response you wa
 Pick an endpoint, choose the user under **Auth** (or None for an unauthenticated request), select the options you want,
 and press **Send** (or ⌘/Ctrl + Enter) to see the response with its status, `X-Sort` and `X-Pagination` headers.
 
-- **Overrides** answer with something other than the records. `menu` shows what the endpoint accepts and ignores
-  every other option, `count` included. `count`, on collections, shows how many records match the filter and ignores
-  fields, sort and pages. Ignored options are still sent and can still be changed; their section is outlined in the
-  warning colour and says which override ignores them, and they're struck through in the URL.
+- **Overrides**, on collections, answer with something other than the records. `count` shows how many records match
+  the filter and ignores fields, sort and pages. Ignored options are still sent and can still be changed; their section
+  is outlined in the warning colour and says which override ignores them, and they're struck through in the URL.
 - **Fields** lists every attribute and association the endpoint can render. Defaults start selected: de-select one to
   `exclude` it, select another to `include` it. An association's own fields shape the nested resources.
 - **Filter** has every filter surrender generates: equality on each column, and `_before` and `_after` on timestamps,
@@ -85,12 +84,15 @@ and press **Send** (or ⌘/Ctrl + Enter) to see the response with its status, `X
 The request line shows the URL as you build it, with each parameter coloured like its section, and the matching
 `bin/http` command to copy.
 
-The explorer lists the app's `GET` routes (see [`Explorer::Catalog`](app/models/explorer/catalog.rb)), so a new route
-shows up without touching the explorer. When you pick one, it asks the route for its
-[menu](https://github.com/smmcbride/rails-surrender#menus) with `?menu`, as the user chosen under **Auth**, and builds the
-options from it. They always match what that endpoint accepts, including what its controller includes, excludes or
-leaves unpaginated. `config.surrender.menus = true` in `config/application.rb` turns menus on. A member route asks for
-its menu with the id you enter, so an id that doesn't exist, or a user who can't see it, shows the error instead.
+The explorer reads the app's [menu](https://github.com/smmcbride/rails-surrender#menus) from `GET /surrender_menu`
+when the page loads, and builds a tab for each endpoint it lists, with the options that endpoint accepts. A new route
+whose controller surrenders shows up without touching the explorer. `config.surrender.menus = true` in
+`config/application.rb` turns the menu on, and [`Explorer::Catalog`](app/models/explorer/catalog.rb) tells the page
+where it's served. The link at the top right opens the menu itself.
+
+Surrender serves the menu from its own controller, so it needs no user: it describes what each endpoint accepts, not
+any records. The records stay behind the demo's authentication, so the user under **Auth** still decides what a
+request you send gets back.
 
 ### From the terminal
 
@@ -336,6 +338,13 @@ bin/http userId=1 '/users?filter=active:true&exclude=name,active'
         "id": 5
     }
 ]
+```
+
+**Read the menu.** The menu lists every endpoint, the fields each renders by default and those a request may include,
+and, for a collection, its filters, sorts and page size. It needs no user.
+
+```sh
+bin/http '/surrender_menu'
 ```
 
 **Ask for something unavailable.** `User` doesn't make `company` available, so the request is rejected with
