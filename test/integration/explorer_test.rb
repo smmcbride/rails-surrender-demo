@@ -14,7 +14,8 @@ class ExplorerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test 'offers every API route' do
-    assert_equal api_routes.sort, Explorer::Catalog.new.endpoints.map(&:path).sort
+  test 'offers every API route, read from the routes, leaving out the health check and the page itself' do
+    assert_equal ['/company', '/users', '/users/{id}', '/work_orders', '/work_orders/{id}'],
+                 Explorer::Catalog.new.endpoints.sort
   end
 end

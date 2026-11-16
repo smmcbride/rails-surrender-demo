@@ -46,5 +46,9 @@ module RailsSurrenderDemo
     # the limit.
     config.surrender.default_per_page = 30
     config.surrender.max_per_page = 60
+
+    # Lets each endpoint describe what it accepts when a request adds `?menu`, which the explorer reads to build its
+    # controls. Menus are off unless an app turns them on.
+    config.surrender.menus = true
   end
 end

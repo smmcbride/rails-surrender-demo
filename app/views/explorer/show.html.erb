@@ -3,27 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Surrender explorer</title>
+  <title>Surrender Demonstration Explorer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/explorer/explorer.css">
-  <script src="/explorer/explorer.js" defer></script>
+  <link rel="stylesheet" href="<%= explorer_asset('explorer.css') %>">
+  <script src="<%= explorer_asset('explorer.js') %>" defer></script>
 </head>
 <body>
   <%= tag.div id: 'explorer', data: { catalog: @catalog } do %>
     <header class="masthead">
-      <h1>Surrender explorer</h1>
-      <label class="actor">
-        Acting as
-        <select id="user"></select>
-      </label>
+      <h1>Surrender Demonstration Explorer</h1>
     </header>
 
     <nav class="endpoints" id="endpoints" aria-label="Endpoint"></nav>
 
     <div class="workspace">
-      <form class="controls" id="controls" aria-label="Query options"></form>
+      <form class="controls" id="controls" aria-label="Query options">
+        <fieldset class="section section-auth">
+          <legend>Auth</legend>
+          <p class="hint">The user the request is sent as. None sends it unauthenticated.</p>
+          <label class="auth-user">User <select id="user"></select></label>
+        </fieldset>
+      </form>
 
       <section class="exchange" aria-label="Request and response">
         <div class="request">
@@ -39,7 +41,7 @@
         </div>
 
         <div class="response" id="response">
-          <p class="empty">Tick the options you want, then press <strong>Send</strong> (or <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd>).</p>
+          <p class="empty">Craft your response using the available selections, then press <strong>Send</strong> (or <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd>).</p>
         </div>
       </section>
     </div>

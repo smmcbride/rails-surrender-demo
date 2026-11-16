@@ -64,20 +64,33 @@ five users each, with their work orders and activities, and starts the server on
 
 ### In the browser
 
-Open http://localhost:3000 for the explorer. Pick an endpoint and the user to act as, tick the options you want, and
-press **Send** (or ⌘/Ctrl + Enter) to see the response with its status, `X-Sort` and `X-Pagination` headers.
+Open http://localhost:3000 for the explorer, where you craft the response you want from what each endpoint offers.
+Pick an endpoint, choose the user under **Auth** (or None for an unauthenticated request), select the options you want,
+and press **Send** (or ⌘/Ctrl + Enter) to see the response with its status, `X-Sort` and `X-Pagination` headers.
 
-- **Fields** lists every attribute and association the model can render. Defaults start ticked: untick one to
-  `exclude` it, tick another to `include` it. An association's own fields shape the nested resources.
+- **Overrides** answer with something other than the records. `menu` shows what the endpoint accepts and ignores
+  every other option, `count` included. `count`, on collections, shows how many records match the filter and ignores
+  fields, sort and pages. Ignored options are still sent and can still be changed; their section is outlined in the
+  warning colour and says which override ignores them, and they're struck through in the URL.
+- **Fields** lists every attribute and association the endpoint can render. Defaults start selected: de-select one to
+  `exclude` it, select another to `include` it. An association's own fields shape the nested resources.
 - **Filter** has every filter surrender generates: equality on each column, and `_before` and `_after` on timestamps,
-  to the second, sent as ISO 8601 times in UTC. Each starts with a value, so ticking it is enough.
+  to the second, sent as ISO 8601 times in UTC. Times show as they're sent (`2026-01-01T03:00:03Z`): type one, or
+  pick it from the browser's own calendar, and the explorer writes it in UTC. Each starts with a value that suits its type, so
+  selecting it is enough.
 - **Sort** offers each column, and each column of a `belongs_to` association, ascending or descending.
-- **Pages and totals** sets `page` and `per`, or asks for the `count` instead of the records. `per` starts at the
-  demo's default page size of 30 and stops at its limit of 60.
+- **Pagination** sets `page` and `per` on paginated collections. `per` starts at the demo's default page size of 30
+  and stops at its limit of 60.
 
 The request line shows the URL as you build it, with each parameter coloured like its section, and the matching
-`bin/http` command to copy. The options are read from each model's `surrenders` declaration, its columns and its
-validations (see [`app/models/explorer`](app/models/explorer)), so they always match what the API accepts.
+`bin/http` command to copy.
+
+The explorer lists the app's `GET` routes (see [`Explorer::Catalog`](app/models/explorer/catalog.rb)), so a new route
+shows up without touching the explorer. When you pick one, it asks the route for its
+[menu](https://github.com/smmcbride/rails-surrender#menus) with `?menu`, as the user chosen under **Auth**, and builds the
+options from it. They always match what that endpoint accepts, including what its controller includes, excludes or
+leaves unpaginated. `config.surrender.menus = true` in `config/application.rb` turns menus on. A member route asks for
+its menu with the id you enter, so an id that doesn't exist, or a user who can't see it, shows the error instead.
 
 ### From the terminal
 
