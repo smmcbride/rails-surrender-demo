@@ -3,8 +3,8 @@
 [![CI](https://github.com/smmcbride/rails-surrender-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/smmcbride/rails-surrender-demo/actions/workflows/ci.yml)
 
 A small Rails application that shows [rails-surrender](https://github.com/smmcbride/rails-surrender) in use. The API client shapes
-each response with query parameters: they pick the attributes and nested associations they want, and filter, sort,
-paginate or count the results.
+each response with query parameters: it picks the attributes and nested associations it wants, and filters, sorts,
+paginates or counts the results.
 
 ![The explorer crafting a /work_orders request and showing its response](docs/explorer.png)
 
