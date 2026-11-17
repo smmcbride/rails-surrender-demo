@@ -2,23 +2,15 @@
 
 [![CI](https://github.com/smmcbride/rails-surrender-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/smmcbride/rails-surrender-demo/actions/workflows/ci.yml)
 
-A small Rails API that shows [rails-surrender](https://github.com/smmcbride/rails-surrender) in use. API clients shape
+A small Rails application that shows [rails-surrender](https://github.com/smmcbride/rails-surrender) in use. The API client shapes
 each response with query parameters: they pick the attributes and nested associations they want, and filter, sort,
-paginate or count the results. The controllers stay one line long.
+paginate or count the results.
 
-```ruby
-class WorkOrdersController < ApplicationController
-  load_and_authorize_resource
-
-  def index
-    surrender @work_orders
-  end
-end
-```
+![The explorer crafting a /work_orders request and showing its response](docs/explorer.png)
 
 ## The domain
 
-A **company** has **users**. Users raise **work orders**, and each work order records **activities**.
+A **company** has **users**. Users create **work orders**, and each work order records **activities**.
 
 | Model       | Rendered by default                    | Available on request                 |
 |-------------|----------------------------------------|--------------------------------------|
@@ -27,7 +19,7 @@ A **company** has **users**. Users raise **work orders**, and each work order re
 | `WorkOrder` | `id`, `title`, `description`, `status`, `activities` | `created_at`, `updated_at`, `user` |
 | `Activity`  | `id`, `action`, `creator`              | `user_id`, `created_at`, `updated_at` |
 
-Each model declares this with `surrenders` (see [`app/models`](app/models)).
+Each model declares a default response with `surrenders` (see [`app/models`](app/models)).
 
 Authorization uses [CanCanCan](https://github.com/CanCanCommunity/cancancan). A user can read only their own company,
 its users, and the work orders and activities those users created. Surrender applies the same rules to nested
